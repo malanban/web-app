@@ -3,133 +3,276 @@ from datetime import datetime
 import os
 
 # Specify your actual GitHub repository URL here
-GITHUB_REPO_URL = "https://github.com/your-username/your-repo-name" 
+GITHUB_REPO_URL = "https://github.com/your-username/your-repo-name"
 
 application = Flask(__name__)
 
-# HTML template styled with Tailwind CSS (Cyber-Tech Theme)
+# HTML template styled as a colourful telecom "network coverage" dashboard
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Project: AURA | AWS Elastic Beanstalk</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>SLT Mobitel | AWS Cloud Hosting — Deployment Status</title>
     <script>
-        // Simulate a running server clock
         function updateClock() {
             const now = new Date();
-            document.getElementById('server-time').textContent = now.toISOString().replace('T', ' ').substr(0, 19) + ' UTC';
+            const el = document.getElementById('server-time');
+            if (el) el.textContent = now.toISOString().replace('T', ' ').substr(0, 19) + ' UTC';
         }
         setInterval(updateClock, 1000);
     </script>
     <style>
-        /* Custom font and scanline effect */
-        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        body {
-            font-family: 'Share+Tech+Mono', monospace;
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+        :root {
+            --navy-950: #0A1128;
+            --navy-900: #10193A;
+            --navy-800: #182653;
+            --line: rgba(148, 163, 196, 0.16);
+            --text-primary: #F4F6FB;
+            --text-muted: #8C9AC0;
+            --green: #7DC242;
+            --orange: #F7941D;
+            --blue: #00AEEF;
+            --magenta: #EC1E79;
         }
-        .scanlines::before {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: 'IBM Plex Sans', sans-serif;
+            background-color: var(--navy-950);
+            background-image:
+                repeating-linear-gradient(115deg, rgba(0,174,239,0.05) 0px, rgba(0,174,239,0.05) 1px, transparent 1px, transparent 90px),
+                repeating-linear-gradient(25deg, rgba(125,194,66,0.04) 0px, rgba(125,194,66,0.04) 1px, transparent 1px, transparent 90px);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .mono { font-family: 'IBM Plex Mono', monospace; }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 32px;
+            border-bottom: 1px solid var(--line);
+            max-width: 1180px;
             width: 100%;
-            height: 100%;
-            background: repeating-linear-gradient(
-                to bottom,
-                transparent,
-                transparent 2px,
-                rgba(0, 0, 0, 0.15) 3px,
-                transparent 3px
-            );
-            pointer-events: none;
-            z-index: 10;
+            margin: 0 auto;
+        }
+
+        .brand { display: flex; align-items: center; gap: 14px; }
+
+        .signal-mark { position: relative; width: 26px; height: 26px; flex-shrink: 0; }
+        .signal-mark .dot {
+            position: absolute; inset: 0; margin: auto;
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 10px var(--green);
+        }
+        .signal-mark .ring {
+            position: absolute; inset: 0; margin: auto;
+            border-radius: 50%; border: 1.5px solid;
+            width: 8px; height: 8px; opacity: 0;
+            animation: pulseRing 2.8s ease-out infinite;
+        }
+        .signal-mark .ring:nth-child(2) { border-color: var(--orange); animation-delay: 0.5s; }
+        .signal-mark .ring:nth-child(3) { border-color: var(--blue); animation-delay: 1s; }
+        .signal-mark .ring:nth-child(4) { border-color: var(--magenta); animation-delay: 1.5s; }
+        @keyframes pulseRing {
+            0%   { width: 8px; height: 8px; opacity: 0.9; }
+            100% { width: 30px; height: 30px; opacity: 0; }
+        }
+
+        .wordmark { font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 1rem; letter-spacing: 0.02em; }
+        .wordmark span { color: var(--orange); }
+        .tagline { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.08em; margin-top: 1px; }
+
+        .region-chip {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--blue);
+            border: 1px solid rgba(0,174,239,0.35);
+            background: rgba(0,174,239,0.08);
+            padding: 6px 12px;
+            border-radius: 3px;
+        }
+
+        main {
+            flex-grow: 1;
+            max-width: 1180px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 48px 32px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1.7fr 1fr;
+            gap: 24px;
+        }
+
+        .panel {
+            background: linear-gradient(180deg, var(--navy-900), var(--navy-800));
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            padding: 32px;
+        }
+
+        .hero-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+
+        h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: clamp(1.9rem, 4vw, 2.7rem);
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0 0 8px 0;
+        }
+
+        .status-live {
+            display: inline-flex; align-items: center; gap: 8px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--green);
+            border: 1px solid rgba(125,194,66,0.4);
+            background: rgba(125,194,66,0.08);
+            padding: 8px 14px;
+            border-radius: 3px;
+            white-space: nowrap;
+        }
+        .status-live .blip { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+
+        .hero-desc { color: var(--text-muted); font-size: 0.98rem; line-height: 1.7; max-width: 46ch; margin-top: 18px; }
+        .hero-desc strong { color: var(--text-primary); font-weight: 500; }
+
+        .log {
+            margin-top: 28px;
+            background: rgba(0,0,0,0.35);
+            border: 1px solid var(--line);
+            border-radius: 5px;
+            padding: 18px 20px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.78rem;
+            line-height: 1.9;
+        }
+        .log .row { display: flex; gap: 10px; color: var(--text-muted); }
+        .log .ok { color: var(--green); }
+        .log .arrow { color: var(--blue); }
+
+        .stats { display: flex; flex-direction: column; gap: 14px; }
+
+        .stat-card {
+            background: var(--navy-900);
+            border: 1px solid var(--line);
+            border-left: 3px solid var(--accent, var(--blue));
+            border-radius: 4px;
+            padding: 16px 18px;
+        }
+        .stat-card .label { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.06em; }
+        .stat-card .value { font-family: 'IBM Plex Mono', monospace; font-size: 1.15rem; margin-top: 5px; font-weight: 500; }
+
+        .actions { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+
+        .btn {
+            display: block; text-align: center;
+            padding: 13px 18px;
+            border-radius: 4px;
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 600;
+            font-size: 0.88rem;
+            text-decoration: none;
+            transition: opacity 0.15s ease;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: var(--green); color: var(--navy-950); }
+        .btn-outline { border: 1px solid rgba(0,174,239,0.45); color: var(--blue); display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+        footer {
+            border-top: 2px solid transparent;
+            border-image: linear-gradient(90deg, var(--green), var(--orange), var(--blue), var(--magenta)) 1;
+            text-align: center;
+            padding: 18px;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--text-muted);
+        }
+
+        @media (max-width: 800px) {
+            .grid { grid-template-columns: 1fr; }
+            header { flex-direction: column; align-items: flex-start; gap: 12px; }
         }
     </style>
 </head>
-<body class="bg-black text-cyan-400 min-h-screen flex flex-col justify-between scanlines overflow-hidden">
-    
-    <!-- Background grid effect -->
-    <div class="fixed inset-0 opacity-10 bg-[url('https://www.transparenttextures.com/patterns/dark-dotted-squares.png')]"></div>
+<body>
 
-    <!-- Header / Navbar -->
-    <header class="relative z-20 w-full py-4 px-6 border-b border-cyan-950 flex justify-between items-center max-w-7xl mx-auto bg-black/50 backdrop-blur-sm">
-        <div class="flex items-center space-x-3">
-            <div class="relative h-3 w-3 flex items-center justify-center">
-                <div class="absolute h-full w-full bg-cyan-500 rounded-full animate-ping opacity-75"></div>
-                <div class="relative h-2 w-2 bg-cyan-300 rounded-full"></div>
+    <header>
+        <div class="brand">
+            <div class="signal-mark">
+                <span class="ring"></span><span class="ring"></span><span class="ring"></span>
+                <span class="dot"></span>
             </div>
-            <span class="font-bold text-sm tracking-widest uppercase text-cyan-300">SYS_ID: AURA_CORE_1</span>
+            <div>
+                <div class="wordmark">SLT <span>MOBITEL</span> CLOUD</div>
+                <div class="tagline">AWS WEB HOSTING NODE</div>
+            </div>
         </div>
-        <div class="text-xs px-3 py-1 rounded border border-cyan-900 bg-cyan-950/50 text-cyan-500">
-            AWS_REGION: {{ aws_region }}
-        </div>
+        <div class="region-chip">REGION: {{ aws_region }}</div>
     </header>
 
-    <!-- Main Content Grid -->
-    <main class="flex-grow flex items-center justify-center px-6 py-8 relative z-20">
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 w-full max-w-7xl h-auto md:h-[70vh]">
-            
-            <!-- Left Panel: Status -->
-            <div class="md:col-span-3 bg-black border border-cyan-900 p-8 rounded-lg shadow-inner flex flex-col justify-between">
-                <div class="space-y-4">
-                    <div class="flex items-center justify-between border-b border-cyan-900 pb-2 mb-4">
-                        <h1 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight uppercase">DEPLOYMENT_</h1>
-                        <span class="text-5xl font-black text-green-400">SUCCESS</span>
-                    </div>
+    <main>
+        <div class="grid">
 
-                    <div class="text-cyan-600 text-lg leading-relaxed max-w-3xl">
-                        <p class="animate-pulse">/// STATUS: CORE NODE OPERATIONAL. DEPLOYMENT PIPELINE [GITHUB_ACTIONS] VALIDATED.</p>
-                        <p class="mt-2">AWS Elastic Beanstalk successfully initialized with Python/Gunicorn runtime.</p>
-                        <p class="mt-2 text-white">ENVIRONMENT: {{ env_name }}</p>
-                    </div>
+            <div class="panel">
+                <div class="hero-top">
+                    <h1>Deployment is live and serving traffic.</h1>
+                    <span class="status-live"><span class="blip"></span>ACTIVE</span>
                 </div>
+                <p class="hero-desc">
+                    This AWS Elastic Beanstalk environment finished provisioning and passed its health checks.
+                    The app is running on a <strong>Python / Gunicorn</strong> runtime behind Flask, deployed for
+                    <strong>{{ env_name }}</strong>.
+                </p>
 
-                <!-- Data Terminal -->
-                <div class="bg-gray-950 p-5 rounded font-mono text-xs mt-8 border border-gray-800 text-cyan-300 space-y-2 overflow-auto h-32">
-                    <p>> INITIALIZING EB DEPLOYMENT... [OK]</p>
-                    <p>> VERIFYING REQUIREMENTS.TXT... [OK]</p>
-                    <p>> STARTING GUNICORN... [OK]</p>
-                    <p>> APPLICATION HEALTH CHECK: ACTIVE... [OK]</p>
-                    <p class="text-green-400">> > > SYSTEM READY.</p>
+                <div class="log">
+                    <div class="row"><span class="arrow">&gt;</span> initializing elastic beanstalk deployment <span class="ok">[ok]</span></div>
+                    <div class="row"><span class="arrow">&gt;</span> verifying requirements.txt <span class="ok">[ok]</span></div>
+                    <div class="row"><span class="arrow">&gt;</span> starting gunicorn worker processes <span class="ok">[ok]</span></div>
+                    <div class="row"><span class="arrow">&gt;</span> application health check <span class="ok">[ok]</span></div>
+                    <div class="row" style="color: var(--green);"><span class="arrow">&gt;</span> node ready — accepting requests</div>
                 </div>
             </div>
 
-            <!-- Right Panel: System Info & Links -->
-            <div class="bg-black border border-cyan-900 p-6 rounded-lg shadow-inner space-y-6 flex flex-col justify-between">
-                
-                <div>
-                    <h2 class="text-xl font-bold text-cyan-200 uppercase border-b border-cyan-900 pb-2 mb-4">SYSTEM_STATS</h2>
-                    
-                    <div class="space-y-4">
-                        <div class="bg-cyan-950 p-4 rounded border border-cyan-900">
-                            <p class="text-xs text-cyan-600 uppercase tracking-wider">SERVER_TIME_UTC</p>
-                            <p id="server-time" class="text-lg text-white font-bold mt-1 font-mono">{{ current_time }}</p>
-                        </div>
-
-                        <div class="bg-cyan-950 p-4 rounded border border-cyan-900">
-                            <p class="text-xs text-cyan-600 uppercase tracking-wider">ENV_HEALTH</p>
-                            <p class="text-green-400 font-bold mt-1 text-lg flex items-center space-x-2">
-                                <span class="relative flex h-3 w-3">
-                                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                                    <span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                                </span>
-                                <span>NOMINAL</span>
-                            </p>
-                        </div>
+            <div>
+                <div class="stats">
+                    <div class="stat-card" style="--accent: var(--blue);">
+                        <div class="label">SERVER TIME (UTC)</div>
+                        <div class="value" id="server-time">{{ current_time }}</div>
+                    </div>
+                    <div class="stat-card" style="--accent: var(--green);">
+                        <div class="label">ENVIRONMENT HEALTH</div>
+                        <div class="value" style="color: var(--green);">Nominal</div>
+                    </div>
+                    <div class="stat-card" style="--accent: var(--orange);">
+                        <div class="label">ENVIRONMENT NAME</div>
+                        <div class="value">{{ env_name }}</div>
+                    </div>
+                    <div class="stat-card" style="--accent: var(--magenta);">
+                        <div class="label">SERVICE ID</div>
+                        <div class="value">slt-mobitel-cloud-01</div>
                     </div>
                 </div>
 
-                <!-- Link Section -->
-                <div class="space-y-3 pt-6 border-t border-cyan-900">
-                    <a href="/health" class="block w-full text-center px-6 py-3 rounded bg-cyan-900 hover:bg-cyan-800 text-white font-bold text-sm transition uppercase tracking-wider shadow-lg shadow-cyan-900/20">
-                        RUN HEALTH CHECK
-                    </a>
-                    <a href="{{ github_url }}" target="_blank" class="block w-full text-center px-6 py-3 rounded bg-gray-900 hover:bg-gray-800 text-cyan-300 font-bold text-sm border border-gray-700 transition uppercase tracking-wider flex items-center justify-center space-x-2">
-                        <svg height="20" width="20" class="fill-current" viewBox="0 0 16 16" version="1.1" aria-hidden="true"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
-                        <span>SOURCE_CODE_REPO</span>
+                <div class="actions">
+                    <a href="/health" class="btn btn-primary">Run health check</a>
+                    <a href="{{ github_url }}" target="_blank" class="btn btn-outline">
+                        <svg height="16" width="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z"></path></svg>
+                        View source on GitHub
                     </a>
                 </div>
             </div>
@@ -137,37 +280,37 @@ HTML_TEMPLATE = """
         </div>
     </main>
 
-    <!-- Footer -->
-    <footer class="relative z-20 py-4 text-center text-xs text-cyan-900 border-t border-cyan-950 max-w-7xl mx-auto w-full bg-black/50">
-        [AURA_SYSTEM_RUNNING] >> AWS Elastic Beanstalk >> Flask v3.x
-    </footer>
+    <footer>SLT MOBITEL CLOUD &nbsp;·&nbsp; AWS Elastic Beanstalk &nbsp;·&nbsp; Flask {{ flask_note }}</footer>
 
 </body>
 </html>
 """
 
+
 @application.route('/')
 def home():
     now = datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')
-    # Get environment name from AWS metadata if available, else default
     env_name = os.environ.get('AWS_EB_ENVIRONMENT_NAME', 'LOCAL_DEBUG')
-    aws_region = os.environ.get('AWS_REGION', 'us-east-1')
-    
+    aws_region = os.environ.get('AWS_REGION', 'ap-south-1')
+
     return render_template_string(
-        HTML_TEMPLATE, 
+        HTML_TEMPLATE,
         current_time=now,
         github_url=GITHUB_REPO_URL,
         env_name=env_name,
-        aws_region=aws_region
+        aws_region=aws_region,
+        flask_note='v3.x'
     )
+
 
 @application.route('/health')
 def health_check():
     return jsonify({
         "status": "nominal",
-        "service_id": "aura-core-1",
+        "service_id": "slt-mobitel-cloud-01",
         "timestamp_utc": datetime.utcnow().isoformat()
     }), 200
+
 
 if __name__ == '__main__':
     # Local development server execution
